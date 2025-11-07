@@ -1,0 +1,60 @@
+*.ipynb_checkpoints
+*__pycache__
+/cars.mp4
+/model_weights.h5
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.env
+secrets.json
+config.local.py
+
+# Sensitive data
+last_accident_frame.jpg
+feedback_data/feedback_log.json
+
+# Virtual environments
+venv/
+llama_env/
+accident_detection_env/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model files (large)
+*.keras
+*.h5
+*.pkl
+*.pth
+*.pt
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Datasets (not tracked)
+data/train/
+data/val/
+data/test/
+data/videos/
+
+# Root-level videos (avoid committing large media)
+/*.mp4
+/*.avi
+/*.mov

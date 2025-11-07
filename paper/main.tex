@@ -1,0 +1,374 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+\begin{document}
+
+\title{Crime Detection System: A Framework with LLM Integration\\
+
+}
+
+\author{\IEEEauthorblockN{ {Aiswarya A}}
+\IEEEauthorblockA{\textit{SCOPE - Big Data Analytics } \\
+\textit{Vellore Institute of Technology }\\
+Vellore, Tamil Nadu, India\\
+aaiswarya12@gmail.com}
+\and
+
+\IEEEauthorblockN{Falguni Shinde}
+\IEEEauthorblockA{\textit{SCOPE - Big Data Analytics } \\
+\textit{Vellore Institute of Technology }\\
+Vellore, Tamil Nadu, India\\
+falgunis600@gmail.com}
+\and
+\IEEEauthorblockN{P Sreejindeth}
+\IEEEauthorblockA{\textit{SCOPE - Big Data Analytics } \\
+\textit{Vellore Institute of Technology }\\
+Vellore, Tamil Nadu, India\\
+sreejindeth@gmail.com}
+\and
+\IEEEauthorblockN{Dr. Subramaniyaswamy}
+\IEEEauthorblockA{\textit{
+Professor } \\
+\textit{Vellore Institute of Technology }\\
+Vellore, Tamil Nadu, India\\
+subramaniyaswamy.v@vit.ac.in}
+\and
+
+}
+
+
+
+\maketitle
+
+\begin{abstract}
+This paper presents a Crime Detection System for real-time accident detection and hit-and-run analysis by integrating computer vision, machine learning, and natural language processing (NLP) using Large Language Models (LLMs). Frames from CCTV are pre-processed to $250\times250$ RGB and classified by a CNN into Accident vs. Non Accident. When detected above a threshold, the system saves the incident frame and sends alerts via Telegram. An optional LLM layer (Gemini API or LLaMA via Ollama) generates scene descriptions, structured JSON summaries, safety recommendations, and operator briefs. In testing, Gemini provided stable outputs while LLaMA/Ollama showed instability on commodity hardware. An evaluation utility outputs accuracy, confusion matrix, ROC and precision--recall curves.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Large Language Model (LLM), Hit-and-Run Analysis, Alerting System, Crime Detection System, Real-time Processing, Traffic Surveillance, Telegram Integration 
+\end{IEEEkeywords}
+
+\section{Introduction}
+Crime detection and prevention are critical for modern law enforcement, requiring solutions that improve efficiency and accuracy. Traditional methods rely on manual CCTV monitoring and delayed reporting, making real-time intervention challenging. With AI and Large Language Models (LLMs), crime detection systems can process structured and unstructured data for faster decision-making.
+
+Hit-and-run cases are particularly challenging as they require rapid analysis of video evidence. The integration of computer vision and NLP enables automated detection and reporting. This paper presents a system that processes CCTV frames using a CNN classifier, detects accidents in real-time, and optionally uses LLMs to generate structured reports for law enforcement and insurance purposes.
+
+The proposed system implements a CNN-based frame classifier operating on $250\times250$ RGB frames with a conservative threshold (0.95) to reduce false positives. Upon detection, it captures the incident frame, sends Telegram alerts, and optionally invokes an LLM (Gemini API or LLaMA via Ollama) to generate scene descriptions, JSON summaries, safety recommendations, and operator briefs. The system is designed for practical deployment with configurable LLM providers based on hardware constraints.
+
+\section{Related Works}
+In recent years, LLMs have gained traction for crime detection and law enforcement assistance. Sarzaeim et al.~\cite{b1} present a framework for LLM-assisted smart policing systems. Rostam et al.~\cite{b2} provide a systematic review on LLM performance optimization. Qi~\cite{b3} explores multi-modal LLM applications in recommendation systems. Hernandez-Salinas et al.~\cite{b4} develop an Intelligent Driving Assistance System using RAG.
+
+For video anomaly detection, Sultani et al.~\cite{sultani2018anomaly} propose a weakly supervised learning framework for surveillance videos. Ramachandra et al.~\cite{ramachandra2020survey} survey single-scene video anomaly detection techniques. Hasan et al.~\cite{hasan2016learning} introduce temporal regularity learning for video sequences. Haghshenas et al.~\cite{b6} investigate AI for managing emergencies in smart cities. Maliphol and Hamilton~\cite{b7} discuss ethical considerations in smart policing systems.
+
+Foundation models include Touvron et al.~\cite{llama} who introduced LLaMA, an open-source efficient LLM. Liu et al.~\cite{llava} developed LLaVA, a vision-language model. Google's Gemini API~\cite{gemini} provides production-ready multimodal LLM services. Evaluation metrics are discussed by Fawcett~\cite{fawcett} and Saito et al.~\cite{saito} for ROC and precision-recall analysis.
+
+\begin{table}[t]
+\caption{Comparison of Related Works in Accident Detection and Crime Analysis}
+\label{tab:related_works}
+\centering
+\footnotesize
+\begin{tabular}{|c|l|l|l|l|}
+\hline
+\textbf{Year} & \textbf{Authors} & \textbf{Technique} & \textbf{Contribution} & \textbf{Limitation} \\
+\hline
+2024 & Sarzaeim et al.~\cite{b1} & LLM-Assisted Smart Policing & LLM framework for law enforcement & High computational resources \\
+\hline
+2024 & Rostam et al.~\cite{b2} & LLM Performance Optimization & Systematic review of LLM optimization & General LLMs, not domain-specific \\
+\hline
+2024 & Qi~\cite{b3} & Multi-Modal LLM & Vision-language model for recommendations & Limited to recommendation domain \\
+\hline
+2024 & Hernandez-Salinas et al.~\cite{b4} & RAG-based Driving Assistance & Intelligent driving system with RAG & Requires external knowledge base \\
+\hline
+2020 & Ramachandra et al.~\cite{ramachandra2020survey} & Video Anomaly Detection Survey & Survey of detection methods & Survey paper, no implementation \\
+\hline
+2018 & Sultani et al.~\cite{sultani2018anomaly} & Weakly Supervised Anomaly Detection & Real-world anomaly detection framework & Requires manual annotation \\
+\hline
+2016 & Hasan et al.~\cite{hasan2016learning} & Temporal Regularity Learning & Temporal pattern analysis for video & Limited to temporal features \\
+\hline
+2023 & Haghshenas et al.~\cite{b6} & AI for Smart City Emergencies & Emergency management in smart cities & Lacks implementation details \\
+\hline
+2022 & Maliphol and Hamilton~\cite{b7} & Ethical Smart Policing & Ethical considerations in AI policing & Theoretical, no technical solution \\
+\hline
+2023 & Touvron et al.~\cite{llama} & LLaMA Foundation Model & Open-source efficient LLM & Requires fine-tuning \\
+\hline
+2023 & Liu et al.~\cite{llava} & LLaVA Vision-Language Model & Multimodal understanding capabilities & High memory requirements \\
+\hline
+2023 & Google~\cite{gemini} & Gemini API & Production-ready multimodal LLM & Cloud-based, requires internet \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Proposed Methodology}
+The proposed Crime Detection System integrates LLMs with CNN-based deep learning to address hit-and-run incidents. The system processes CCTV video feeds in real-time using a pre-trained CNN that detects accident-related events such as collisions and vehicle movements. Upon detection, the system extracts metadata (location, vehicle ID, timestamp), saves the incident frame, and sends Telegram alerts. An optional LLM layer generates structured reports including scene descriptions, JSON summaries, safety recommendations, and operator briefs for insurance and law enforcement.
+
+\subsection{Model Architecture}
+The system follows a multi-layered architecture: (i) Data Acquisition Layer processes video frames (resize to $250\times250$, BGR to RGB conversion), (ii) CNN-based accident detection analyzes frames for collisions and vehicle movements, (iii) optional LLM analysis generates structured reports, and (iv) Telegram alerting sends notifications to designated channels. Figure~\ref{fig:workflow} illustrates the complete workflow.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{workflow.jpeg}
+    \caption{Work Flow Model}
+    \label{fig:workflow}
+\end{figure}
+
+\subsection{Video Feed Processing and Accident Detection}
+The system captures video feeds from CCTV sources using OpenCV. Frames are preprocessed: BGR to RGB conversion, resizing to $250\times250$ pixels, and normalization. The CNN model outputs probabilities for Accident and Non Accident classes. Detection occurs when Accident probability exceeds threshold $\tau=0.95$ and simultaneously exceeds Non Accident probability.
+
+\subsection{Incident Classification and Data Extraction}
+Upon detection, the system extracts metadata (timestamp, location, vehicle ID) and saves the last incident frame for evidence. This information forms the basis for accident reports and notifications.
+
+\subsection{Alerting and Notification System (Telegram Integration)}
+The system sends real-time alerts via Telegram Bot API to two channels: urgent alerts for law enforcement and detailed reports for comprehensive documentation. Alerts include text summary, incident image, location, and timestamp. The dual-channel approach optimizes information delivery to different stakeholders.
+
+\subsection{Integration of Large Language Model (LLM) for Report Generation}
+When enabled, the LLM generates: (i) scene description, (ii) structured JSON summary (severity, collision type, vehicles, damage, hazards), (iii) safety recommendations, and (iv) operator briefs for insurance and police. In testing, Gemini API provided stable outputs with reliable JSON formatting. LLaMA/Ollama showed instability on commodity hardware (memory errors, 500 responses) and remains experimental.
+
+\subsection{Predictive Analytics for High-Risk Zones}
+The system can analyze historical data to identify high-risk zones. This capability is planned for future expansion as more data becomes available. The current focus is on reliable detection and reporting.
+
+\subsection{Continous Learning \& Feedback}
+Curated incident frames and verified labels can be reintegrated into training. Operator feedback guides threshold adjustments and data augmentation strategies, enabling continuous improvement.
+
+\subsection{Accident Detection Algorithm}
+The algorithm processes video frames sequentially with real-time detection capability. It begins by initializing the CNN model, Telegram bot, and optional LLM client. The main loop reads frames, preprocesses them (BGR to RGB, resize to $250\times250$, normalize), and passes them to the CNN. Detection occurs when Accident probability exceeds threshold $\tau=0.95$ and exceeds Non Accident probability. Upon detection transition, the system extracts metadata, saves the incident frame, sends Telegram alerts, and optionally invokes LLM analysis to generate reports. Error handling ensures graceful degradation if components fail. Algorithm~\ref{alg:detection} provides the complete workflow.
+
+\begin{algorithm}
+\caption{Accident Detection and Reporting Pipeline}
+\label{alg:detection}
+\begin{algorithmic}[1]
+\STATE Initialize CNN model, Telegram bot, LLM client (if enabled)
+\STATE Set threshold $\tau = 0.95$, $accident\_detected \leftarrow false$
+\WHILE{Video stream active}
+    \STATE Read frame $f$; if fails, break
+    \STATE Preprocess: BGR$\rightarrow$RGB, resize to $250\times250$, normalize
+    \STATE $p \leftarrow CNN\_predict(f)$ \COMMENT{Get probabilities}
+    \IF{$p[Accident] > \tau$ AND $p[Accident] > p[Non]$}
+        \STATE $accident\_detected \leftarrow true$, $last\_frame \leftarrow f$
+    \ELSE
+        \IF{$accident\_detected$ is true}
+            \STATE Extract metadata, save $last\_frame$, send Telegram alerts
+            \IF{LLM enabled} Generate reports and send via Telegram \ENDIF
+            \STATE Reset detection state
+        \ENDIF
+    \ENDIF
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{Alert to Law Enforcement.jpeg}
+    \caption{Alert to Law Enforcement}
+    \label{fig:alert}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.4\linewidth]{Report to User for insurance claim.jpeg}
+    \caption{Report to User for insurance claim}
+    \label{fig:report}
+\end{figure}
+
+\section{EXPERIMENTS AND RESULTS ANALYSIS}
+The performance of the proposed model was evaluated by monitoring the training and validation loss and accuracy during the training process, spanning from 0 to 18 epochs. Additionally, a held-out test split was used to compute comprehensive performance metrics including accuracy, confusion matrix, ROC curves, and precision--recall curves. The evaluation protocol ensures reproducible assessment and supports threshold selection for deployment.
+
+\subsection{Dataset Description}
+The dataset consists of labeled CCTV frames organized into train, validation, and test splits. Each frame is preprocessed to $250\times250$ RGB format during inference. Table~\ref{tab:dataset} presents the distribution of images across splits, showing a balanced representation of accident and non-accident scenarios. The training set contains 791 images (369 accidents, 422 non-accidents), while the validation and test sets contain 98 and 100 images respectively, providing adequate coverage for model evaluation.
+
+\begin{table}[t]
+\caption{Dataset Statistics}
+\label{tab:dataset}
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Split} & \textbf{Accident} & \textbf{Non Accident} & \textbf{Total} \\
+\hline
+Train & 369 & 422 & 791 \\
+\hline
+Val   & 46  & 52  & 98  \\
+\hline
+Test  & 47  & 53  & 100 \\
+\hline
+\textbf{Total} & \textbf{462} & \textbf{527} & \textbf{989} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Runtime Configuration}
+Table~\ref{tab:config} summarizes the key parameters and settings used during system deployment. The configuration emphasizes conservative thresholds and reliable notification channels to ensure practical deployment performance.
+
+\begin{table}[t]
+\caption{Runtime Configuration Parameters}
+\label{tab:config}
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Parameter} & \textbf{Value} \\
+\hline
+Frame Preprocessing & RGB conversion, $250\times250$ resize \\
+\hline
+Classifier Architecture & Keras CNN (binary classification) \\
+\hline
+Detection Threshold $\tau$ & 0.95 (Accident class) \\
+\hline
+Alerting Mechanism & Telegram Bot API (text + image) \\
+\hline
+LLM Provider & Gemini (primary), LLaMA/Ollama (experimental) \\
+\hline
+Evaluation Batch Size & 32 \\
+\hline
+Image Format & JPEG/PNG \\
+\hline
+Video Source & CCTV streams, MP4 files \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Stats on Training Data}
+Fig.~\ref{fig:train} shows training loss declining rapidly from 2.5 to 0.7 in initial epochs (0-2.5), with corresponding accuracy increase from 0.5 to 0.7. After epoch 10, loss stabilizes between 0.1-0.2 and accuracy plateaus at 0.95-1.0, indicating convergence.
+
+\subsection{Results on Testing Data}
+Fig.~\ref{fig:val} shows validation loss decreasing to minimum around epoch 5-6, then increasing with fluctuations, indicating overfitting. Validation accuracy peaks around 0.9 at epoch 14 but shows inconsistencies. The deployment uses threshold 0.95 to reduce false positives. Future work will implement regularization and data augmentation.
+
+\subsection{Quantitative Performance Metrics}
+Table~\ref{tab:metrics} presents quantitative performance metrics on the test split. The evaluation script computes accuracy, ROC AUC, precision-recall AUC, and per-class precision, recall, and F1 scores. These metrics provide comprehensive insight into model performance across different operating points and support threshold selection for deployment scenarios.
+
+\begin{table}[t]
+\caption{Performance Metrics on Test Split}
+\label{tab:metrics}
+\centering
+\begin{tabular}{|l|c|c|c|c|c|c|}
+\hline
+\textbf{Model} & \textbf{Accuracy} & \textbf{ROC AUC} & \textbf{PR AUC} & \textbf{Precision (A)} & \textbf{Recall (A)} & \textbf{F1 (A)} \\
+\hline
+CNN (ours) & -- & -- & -- & -- & -- & -- \\
+\hline
+\end{tabular}
+\vspace{0.1cm}
+\newline
+\footnotesize{Note: Run \texttt{python evaluate\_model.py --split test} to populate this table.}
+\end{table}
+
+\subsection{Comparison with Baseline Approaches}
+Table~\ref{tab:comparison} provides a comparative analysis of different approaches to accident detection, highlighting the strengths and limitations of various methodologies. The proposed system combines CNN-based detection with optional LLM analysis, offering a balance between accuracy and interpretability.
+
+\begin{table}[t]
+\caption{Comparison of Accident Detection Approaches}
+\label{tab:comparison}
+\centering
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Method} & \textbf{Real-time} & \textbf{Accuracy} & \textbf{LLM Integration} & \textbf{Deployment} \\
+\hline
+Traditional CV & Medium & Low & No & Easy \\
+\hline
+YOLO + Tracking & High & Medium & No & Medium \\
+\hline
+CNN Classification & High & High & No & Medium \\
+\hline
+CNN + LLM (Proposed) & High & High & Yes & Medium \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Comparison with Existing Literature}
+Table~\ref{tab:literature_comparison} provides a comprehensive comparison of our proposed system with existing approaches reported in the literature. The comparison highlights key differences in methodology, capabilities, and limitations across various accident detection and crime analysis systems.
+
+\begin{table}[t]
+\caption{Detailed Comparison with Existing Literature}
+\label{tab:literature_comparison}
+\centering
+\footnotesize
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+\textbf{Study} & \textbf{Detection Method} & \textbf{Report Generation} & \textbf{Alerting} & \textbf{Key Advantage} \\
+\hline
+Sarzaeim et al.~\cite{b1} & LLM-based analysis & Structured LLM reports & Not specified & LLM integration \\
+\hline
+Sultani et al.~\cite{sultani2018anomaly} & Weakly supervised CNN & Manual analysis & Not specified & Real-world detection \\
+\hline
+Hasan et al.~\cite{hasan2016learning} & Temporal learning & Not available & Not specified & Temporal analysis \\
+\hline
+Hernandez-Salinas et al.~\cite{b4} & RAG-based system & RAG reports & Not specified & Knowledge-enhanced \\
+\hline
+Ramachandra et al.~\cite{ramachandra2020survey} & Survey of methods & N/A & N/A & Methodology review \\
+\hline
+\textbf{Proposed System} & \textbf{CNN + LLM} & \textbf{Automated LLM} & \textbf{Telegram} & \textbf{End-to-end pipeline} \\
+\hline
+\end{tabular}
+\end{table}
+
+Our proposed system distinguishes itself through several innovations. Unlike Sarzaeim et al.~\cite{b1} who focus on LLM analysis without detection, our system integrates CNN-based detection with LLM analysis. Compared to Sultani et al.~\cite{sultani2018anomaly} using weakly supervised learning, our fully supervised approach enables more reliable deployment. The real-time Telegram alerting with dual-channel notifications (urgent alerts and detailed reports) represents an advancement over systems lacking notification mechanisms. The modular design allows deployment with or without LLM analysis based on resources. Experimental evaluation of multiple LLM providers (Gemini and LLaMA/Ollama) provides practical deployment insights including stability and resource requirements.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.1\linewidth]{realtime workflow (1).jpg}
+    \caption{Training Loss and Accuracy Curves}
+    \label{fig:train}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\linewidth]{realtime workflow (2).jpg}
+    \caption{Validation Loss and Accuracy Curves.}
+    \label{fig:val}
+\end{figure}
+
+\section{DISCUSSION AND CONCLUSION}
+This paper presented a crime detection system leveraging LLM integration for real-time accident detection and hit-and-run analysis. The system integrates computer vision, deep learning, and NLP to achieve efficient accident detection, report generation, and alerting. Experimental results show the model learns effectively from training data, though overfitting was observed in validation curves.
+
+To address overfitting, future work will focus on data augmentation, regularization techniques (L1/L2, dropout), and transfer learning with pre-trained models. Real-world evaluation will assess performance in live traffic conditions. The system's modular design allows deployment with or without LLM analysis based on computational resources. Gemini API provided stable outputs in testing, while LLaMA/Ollama showed instability on commodity hardware and remains experimental.
+
+Future work includes temporal modeling (3D CNNs/transformers), enhanced predictive analytics, and stabilizing LLaMA/Ollama through quantization and memory-aware loading. The system contributes to improving road safety, reducing response times, and enhancing law enforcement effectiveness.
+
+\section*{Acknowledgment}
+We extend our deepest acknowledgment to VIT and thank Prof. Subramaniyaswamy.V for guidance.
+
+\begin{thebibliography}{00}
+% Original references
+\bibitem{b1} Paria Sarzaeim, Qusay H. Mahmoud, Akramul Azim, ``A Framework for LLM-Assisted Smart Policing System'', IEEE, 2024.
+\bibitem{b2} Zhyar R. K. Rostam, S. Sz\'en\'asi, G. Kert\'esz, ``Achieving Peak Performance for Large Language Models: A Systematic Review'', IEEE, 2024.
+\bibitem{b3}  Peixuan Qi, ``Movie Visual and Speech Analysis Through Multi-Modal LLM for Recommendation Systems'', IEEE, 2024.
+\bibitem{b4} L.-B. Hernandez-Salinas; J. Terven; E. A. Chavez-Urbiola; D.-M. C\'ordova-Esparza; J.-A. Romero-Gonz\'alez; A. Arguelles, ``IDAS: Intelligent Driving Assistance System Using RAG'', IEEE, 2024.
+\bibitem{b5} M. Young, The Technical Writer's Handbook. University Science, 1989.
+\bibitem{b6} S. S. Haghshenas et al., ``The role of artificial intelligence in managing emergencies and crises within smart cities,'' ICTDM, 2023.
+\bibitem{b7} S. Maliphol and C. Hamilton, ``Smart policing: Ethical issues \& technology management of robocops,'' PICMET, 2022.
+
+% Practical references (kept in addition)
+\bibitem{opencv}
+G. Bradski, ``The OpenCV Library,'' Dr. Dobb's Journal of Software Tools, 2000.
+\bibitem{keras}
+F. Chollet et al., ``Keras,'' 2015. [Online]. Available: https://keras.io/
+\bibitem{tensorflow}
+M. Abadi et al., ``TensorFlow: Large-Scale Machine Learning on Heterogeneous Systems,'' 2015. [Online]. Available: https://www.tensorflow.org/
+\bibitem{telegram}
+Telegram, ``Telegram Bot API,'' 2025. [Online]. Available: https://core.telegram.org/bots/api
+\bibitem{gemini}
+Google, ``Gemini API,'' 2025. [Online]. Available: https://ai.google.dev/
+\bibitem{llama}
+H. Touvron et al., ``LLaMA: Open and Efficient Foundation Language Models,'' 2023.
+\bibitem{llava}
+H. Liu et al., ``Visual Instruction Tuning,'' 2023.
+\bibitem{fawcett}
+T. Fawcett, ``An Introduction to ROC Analysis,'' Pattern Recognition Letters, 2006.
+\bibitem{saito}
+T. Saito and M. Rehmsmeier, ``Precision-Recall Plot Is More Informative...,'' PLOS ONE, 2015.
+\bibitem{sultani2018anomaly}
+W. Sultani, C. Chen, and M. Shah, ``Real-World Anomaly Detection in Surveillance Videos,'' in Proc. CVPR, 2018.
+\bibitem{ramachandra2020survey}
+B. Ramachandra, M. Jones, and R. K. Vatsavai, ``A Survey of Single-Scene Video Anomaly Detection,'' IEEE TPAMI, 2020.
+\bibitem{hasan2016learning}
+M. Hasan, J. Choi, J. Neumann, A. K. Roy-Chowdhury, and L. S. Davis, ``Learning Temporal Regularity in Video Sequences,'' in Proc. CVPR, 2016.
+\end{thebibliography}
+
+\end{document}
+
+
