@@ -54,7 +54,11 @@ data/val/
 data/test/
 data/videos/
 
-# Root-level videos (avoid committing large media)
+# Root-level videos and media (avoid committing large files)
 /*.mp4
 /*.avi
 /*.mov
+/*.gif
+Bike.mp4
+Car*.mp4
+Demo.gif
